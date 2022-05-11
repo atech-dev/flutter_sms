@@ -25,35 +25,59 @@ import io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener;
 
 import static io.flutter.plugin.common.PluginRegistry.Registrar;
 
+import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+
 /**
  * Created by babariviere on 08/03/18.
  */
 
 class SmsReceiver implements StreamHandler, RequestPermissionsResultListener {
   private final Registrar registrar;
+  private final FlutterPluginBinding flutterPluginBinding;
+  private final ActivityPluginBinding activityPluginBinding;
   private BroadcastReceiver receiver;
   private final Permissions permissions;
   private final String[] permissionsList = new String[] {Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS};
   private EventSink sink;
 
-  SmsReceiver(Registrar registrar) {
+  SmsReceiver(Registrar registrar, FlutterPluginBinding flutterPluginBinding, ActivityPluginBinding activityPluginBinding) {
     this.registrar = registrar;
-    this.permissions = new Permissions(registrar.activity());
-    registrar.addRequestPermissionsResultListener(this);
+    this.flutterPluginBinding = flutterPluginBinding;
+    this.activityPluginBinding = activityPluginBinding;
+    
+    if(registrar == null) {
+        this.permissions = new Permissions(activityPluginBinding.getActivity());
+        activityPluginBinding.addRequestPermissionsResultListener(this);
+    } else {
+        this.permissions = new Permissions(registrar.activity());
+        registrar.addRequestPermissionsResultListener(this);
+    }
+    
   }
 
   @TargetApi(Build.VERSION_CODES.KITKAT)
   @Override
   public void onListen(Object arguments, EventSink events) {
     receiver = createSmsReceiver(events);
-    registrar.context().registerReceiver(receiver, new IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION));
+    if(registrar == null) {
+        this.flutterPluginBinding.getApplicationContext().registerReceiver(receiver, new IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION));
+    } else {
+        registrar.context().registerReceiver(receiver, new IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION));
+    }
+    
     sink = events;
     permissions.checkAndRequestPermission(permissionsList, Permissions.RECV_SMS_ID_REQ);
   }
 
   @Override
   public void onCancel(Object o) {
-    registrar.context().unregisterReceiver(receiver);
+    if(registrar == null) {
+        this.flutterPluginBinding.getApplicationContext().unregisterReceiver(receiver);
+    } else {
+        registrar.context().unregisterReceiver(receiver);
+    }
+    
     receiver = null;
   }
 
