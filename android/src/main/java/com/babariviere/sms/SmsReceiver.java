@@ -22,6 +22,7 @@ import java.util.Date;
 import io.flutter.plugin.common.EventChannel.EventSink;
 import io.flutter.plugin.common.EventChannel.StreamHandler;
 import io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 
 import static io.flutter.plugin.common.PluginRegistry.Registrar;
 
@@ -30,30 +31,31 @@ import static io.flutter.plugin.common.PluginRegistry.Registrar;
  */
 
 class SmsReceiver implements StreamHandler, RequestPermissionsResultListener {
-  private final Registrar registrar;
+  // private final Registrar registrar;
+  private final ActivityPluginBinding activityPluginBinding;
   private BroadcastReceiver receiver;
   private final Permissions permissions;
   private final String[] permissionsList = new String[] {Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS};
   private EventSink sink;
 
-  SmsReceiver(Registrar registrar) {
-    this.registrar = registrar;
-    this.permissions = new Permissions(registrar.activity());
-    registrar.addRequestPermissionsResultListener(this);
+  SmsReceiver(ActivityPluginBinding activityPluginBinding) {
+    this.activityPluginBinding = activityPluginBinding;
+    this.permissions = new Permissions(activityPluginBinding.getActivity());
+    activityPluginBinding.addRequestPermissionsResultListener(this);
   }
 
   @TargetApi(Build.VERSION_CODES.KITKAT)
   @Override
   public void onListen(Object arguments, EventSink events) {
     receiver = createSmsReceiver(events);
-    registrar.context().registerReceiver(receiver, new IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION));
+    activityPluginBinding.getContext().registerReceiver(receiver, new IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION));
     sink = events;
     permissions.checkAndRequestPermission(permissionsList, Permissions.RECV_SMS_ID_REQ);
   }
 
   @Override
   public void onCancel(Object o) {
-    registrar.context().unregisterReceiver(receiver);
+    activityPluginBinding.getContext().unregisterReceiver(receiver);
     receiver = null;
   }
 
