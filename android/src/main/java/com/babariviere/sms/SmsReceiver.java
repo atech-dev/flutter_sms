@@ -49,9 +49,9 @@ class SmsReceiver implements StreamHandler, RequestPermissionsResultListener {
     if(registrar != null) {
       registrar.addRequestPermissionsResultListener(this);
     }
-    if(activityPluginBinding != null) {
+    /*if(activityPluginBinding != null) {
       activityPluginBinding.addRequestPermissionsResultListener(this);
-    }
+    }*/
   }
 
   @TargetApi(Build.VERSION_CODES.KITKAT)
