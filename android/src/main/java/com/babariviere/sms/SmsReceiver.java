@@ -41,11 +41,17 @@ class SmsReceiver implements StreamHandler, RequestPermissionsResultListener {
   private final String[] permissionsList = new String[] {Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS};
   private EventSink sink;
 
-  SmsReceiver(Context context, Activity activity) {
+  SmsReceiver(Context context, Activity activity, Registrar registrar, ActivityPluginBinding activityPluginBinding) {
     this.context = context;
     this.activity = activity;
     this.permissions = new Permissions(activity);
-    activity.addRequestPermissionsResultListener(this);
+
+    if(registrar != null) {
+      registrar.addRequestPermissionsResultListener(this);
+    }
+    if(activityPluginBinding != null) {
+      activityPluginBinding.addRequestPermissionsResultListener(this);
+    }
   }
 
   @TargetApi(Build.VERSION_CODES.KITKAT)

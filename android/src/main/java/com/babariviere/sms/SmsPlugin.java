@@ -58,7 +58,7 @@ public class SmsPlugin implements FlutterPlugin, ActivityAware {
         activityPluginBinding.addRequestPermissionsResultListener(Permissions.getRequestsResultsListener());
 
         // SMS receiver
-        final SmsReceiver receiver = new SmsReceiver(context, activityPluginBinding.getActivity());
+        final SmsReceiver receiver = new SmsReceiver(context, activityPluginBinding.getActivity(), null, activityPluginBinding);
         receiveSmsChannel.setStreamHandler(receiver);
     }
 
@@ -89,7 +89,7 @@ public class SmsPlugin implements FlutterPlugin, ActivityAware {
         registrar.addRequestPermissionsResultListener(Permissions.getRequestsResultsListener());
 
         // SMS receiver
-        final SmsReceiver receiver = new SmsReceiver(registrar.context(), registrar.activity());
+        final SmsReceiver receiver = new SmsReceiver(registrar.context(), registrar.activity(), registrar, null);
         final EventChannel receiveSmsChannel = new EventChannel(registrar.messenger(),
                 CHANNEL_RECV, JSONMethodCodec.INSTANCE);
         receiveSmsChannel.setStreamHandler(receiver);
