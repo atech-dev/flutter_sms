@@ -1,7 +1,11 @@
 package com.babariviere.sms;
 
+import androidx.annotation.NonNull;
+
 import com.babariviere.sms.permisions.Permissions;
 import com.babariviere.sms.status.SmsStateHandler;
+
+// import io.flutter.embedding.engine.plugins.FlutterPlugin;
 
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.JSONMethodCodec;
@@ -35,7 +39,7 @@ public class SmsPlugin {
                 CHANNEL_RECV, JSONMethodCodec.INSTANCE);
         receiveSmsChannel.setStreamHandler(receiver);
 
-        // SMS status receiver
+        /*// SMS status receiver
         new EventChannel(registrar.messenger(), CHANNEL_SMS_STATUS, JSONMethodCodec.INSTANCE)
                 .setStreamHandler(new SmsStateHandler(registrar));
 
@@ -67,6 +71,6 @@ public class SmsPlugin {
 
         //Sim Cards Provider
         new MethodChannel(registrar.messenger(), CHANNEL_SIM_CARDS, JSONMethodCodec.INSTANCE)
-                .setMethodCallHandler(new SimCardsProvider(registrar));
+                .setMethodCallHandler(new SimCardsProvider(registrar));*/
     }
 }

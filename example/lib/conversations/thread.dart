@@ -1,3 +1,4 @@
+/*
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:sms/contact.dart';
@@ -37,3 +38,4 @@ class Thread extends StatelessWidget {
         builder: (context) => new Conversation(thread, userProfile)));
   }
 }
+*/

@@ -1,3 +1,4 @@
+/*
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:sms/contact.dart';
@@ -63,3 +64,4 @@ class ReceivedMessage extends Message {
     );
   }
 }
+*/

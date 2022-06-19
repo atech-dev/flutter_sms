@@ -1,3 +1,4 @@
+/*
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:sms/sms.dart';
@@ -52,3 +53,4 @@ class MessageGroup extends StatelessWidget {
     return i > 0 && group.messages[i].kind == group.messages[i - 1].kind;
   }
 }
+*/

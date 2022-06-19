@@ -1,3 +1,4 @@
+//@dart=2.9
 /// An SMS library for flutter
 library sms;
 
@@ -39,13 +40,16 @@ class SmsMessage implements Comparable<SmsMessage> {
   StreamController<SmsMessageState> _stateStreamController =
       new StreamController<SmsMessageState>();
 
-  SmsMessage(this._address, this._body,
-      {int id,
-      int threadId,
-      bool read,
-      DateTime date,
-      DateTime dateSent,
-      SmsMessageKind kind}) {
+  SmsMessage(
+    this._address,
+    this._body, {
+    int id,
+    int threadId,
+    bool read,
+    DateTime date,
+    DateTime dateSent,
+    SmsMessageKind kind,
+  }) {
     this._id = id;
     this._threadId = threadId;
     this._read = read;
@@ -165,6 +169,7 @@ class SmsMessage implements Comparable<SmsMessage> {
     return other._id - this._id;
   }
 }
+/*
 
 /// A SMS thread
 class SmsThread {
@@ -247,6 +252,7 @@ class SmsThread {
   /// Set contact info
   set contact(Contact contact) => this._contact = contact;
 }
+*/
 
 /// A SMS receiver that creates a stream of SMS
 ///
@@ -286,6 +292,8 @@ class SmsReceiver {
     return _onSmsReceived;
   }
 }
+
+/*
 
 /// A SMS sender
 class SmsSender {
@@ -381,6 +389,9 @@ class SmsSender {
 }
 
 enum SmsQueryKind { Inbox, Sent, Draft }
+*/
+
+/*
 
 /// A SMS query
 class SmsQuery {
@@ -513,19 +524,21 @@ enum SimCardState {
   Locked,
   Ready,
 }
+*/
 
+/*
 /// Represents a device's sim card info
 class SimCard {
   int slot;
   String imei;
   SimCardState state;
 
-  SimCard({
-    @required this.slot,
-    @required this.imei,
-    this.state = SimCardState.Unknown
-  }) : assert(slot != null),
-       assert(imei != null);
+  SimCard(
+      {@required this.slot,
+      @required this.imei,
+      this.state = SimCardState.Unknown})
+      : assert(slot != null),
+        assert(imei != null);
 
   SimCard.fromJson(Map map) {
     if (map.containsKey('slot')) {
@@ -535,7 +548,7 @@ class SimCard {
       this.imei = map['imei'];
     }
     if (map.containsKey('state')) {
-      switch(map['state']) {
+      switch (map['state']) {
         case 0:
           this.state = SimCardState.Unknown;
           break;
@@ -578,10 +591,11 @@ class SimCardsProvider {
     final simCards = new List<SimCard>();
 
     dynamic response = await _channel.invokeMethod('getSimCards', null);
-    for(Map map in response) {
+    for (Map map in response) {
       simCards.add(new SimCard.fromJson(map));
     }
 
     return simCards;
   }
 }
+*/

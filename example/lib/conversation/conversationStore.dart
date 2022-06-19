@@ -1,3 +1,4 @@
+/*
 import 'package:flutter/widgets.dart';
 import 'package:sms/contact.dart';
 import 'package:sms/sms.dart';
@@ -19,3 +20,4 @@ class ConversationStore extends InheritedWidget {
     return true;
   }
 }
+*/

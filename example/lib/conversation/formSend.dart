@@ -1,3 +1,4 @@
+/*
 import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:sms/contact.dart';
@@ -98,3 +99,4 @@ class FormSend extends StatelessWidget {
     Scaffold.of(context).showSnackBar(snackBar);
   }
 }
+*/
