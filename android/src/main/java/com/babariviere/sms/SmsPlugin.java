@@ -2,6 +2,8 @@ package com.babariviere.sms;
 
 import androidx.annotation.NonNull;
 
+import android.content.Context;
+
 import com.babariviere.sms.permisions.Permissions;
 import com.babariviere.sms.status.SmsStateHandler;
 
@@ -32,12 +34,14 @@ public class SmsPlugin implements FlutterPlugin, ActivityAware {
 
     // private MethodChannel channel;
     private EventChannel receiveSmsChannel;
+    private Context context;
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
         // channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "hello");
         // channel.setMethodCallHandler(this);
 
+        this.context = flutterPluginBinding.getApplicationContext();
         receiveSmsChannel = new EventChannel(flutterPluginBinding.getBinaryMessenger(),
                 CHANNEL_RECV, JSONMethodCodec.INSTANCE);
     }
@@ -54,7 +58,7 @@ public class SmsPlugin implements FlutterPlugin, ActivityAware {
         activityPluginBinding.addRequestPermissionsResultListener(Permissions.getRequestsResultsListener());
 
         // SMS receiver
-        final SmsReceiver receiver = new SmsReceiver(activityPluginBinding);
+        final SmsReceiver receiver = new SmsReceiver(context, activityPluginBinding.getActivity());
         receiveSmsChannel.setStreamHandler(receiver);
     }
 
@@ -85,7 +89,7 @@ public class SmsPlugin implements FlutterPlugin, ActivityAware {
         registrar.addRequestPermissionsResultListener(Permissions.getRequestsResultsListener());
 
         // SMS receiver
-        final SmsReceiver receiver = new SmsReceiver(registrar);
+        final SmsReceiver receiver = new SmsReceiver(registrar.context(), registrar.activity());
         final EventChannel receiveSmsChannel = new EventChannel(registrar.messenger(),
                 CHANNEL_RECV, JSONMethodCodec.INSTANCE);
         receiveSmsChannel.setStreamHandler(receiver);

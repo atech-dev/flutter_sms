@@ -12,6 +12,7 @@ import android.provider.Telephony;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 import android.util.Log;
+import android.app.Activity;
 
 import com.babariviere.sms.permisions.Permissions;
 
@@ -31,6 +32,8 @@ import static io.flutter.plugin.common.PluginRegistry.Registrar;
  */
 
 class SmsReceiver implements StreamHandler, RequestPermissionsResultListener {
+  private Context context;
+  private Activity activity;
   // private final Registrar registrar;
   private final ActivityPluginBinding activityPluginBinding;
   private BroadcastReceiver receiver;
@@ -38,24 +41,25 @@ class SmsReceiver implements StreamHandler, RequestPermissionsResultListener {
   private final String[] permissionsList = new String[] {Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS};
   private EventSink sink;
 
-  SmsReceiver(ActivityPluginBinding activityPluginBinding) {
-    this.activityPluginBinding = activityPluginBinding;
-    this.permissions = new Permissions(activityPluginBinding.getActivity());
-    activityPluginBinding.addRequestPermissionsResultListener(this);
+  SmsReceiver(Context context, Activity activity) {
+    this.context = context;
+    this.activity = activity;
+    this.permissions = new Permissions(activity);
+    activity.addRequestPermissionsResultListener(this);
   }
 
   @TargetApi(Build.VERSION_CODES.KITKAT)
   @Override
   public void onListen(Object arguments, EventSink events) {
     receiver = createSmsReceiver(events);
-    activityPluginBinding.getContext().registerReceiver(receiver, new IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION));
+    context.registerReceiver(receiver, new IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION));
     sink = events;
     permissions.checkAndRequestPermission(permissionsList, Permissions.RECV_SMS_ID_REQ);
   }
 
   @Override
   public void onCancel(Object o) {
-    activityPluginBinding.getContext().unregisterReceiver(receiver);
+    context.unregisterReceiver(receiver);
     receiver = null;
   }
 
