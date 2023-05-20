@@ -1,4 +1,3 @@
-//@dart=2.9
 /// An SMS library for flutter
 library sms;
 
@@ -28,14 +27,14 @@ enum SmsMessageKind {
 ///
 /// Used to send message or used to read message.
 class SmsMessage implements Comparable<SmsMessage> {
-  int _id;
-  int _threadId;
-  String _address;
-  String _body;
-  bool _read;
-  DateTime _date;
-  DateTime _dateSent;
-  SmsMessageKind _kind;
+  int? _id;
+  int? _threadId;
+  String? _address;
+  String? _body;
+  bool? _read;
+  DateTime? _date;
+  DateTime? _dateSent;
+  SmsMessageKind? _kind;
   SmsMessageState _state = SmsMessageState.None;
   StreamController<SmsMessageState> _stateStreamController =
       new StreamController<SmsMessageState>();
@@ -43,12 +42,12 @@ class SmsMessage implements Comparable<SmsMessage> {
   SmsMessage(
     this._address,
     this._body, {
-    int id,
-    int threadId,
-    bool read,
-    DateTime date,
-    DateTime dateSent,
-    SmsMessageKind kind,
+    int? id,
+    int? threadId,
+    bool? read,
+    DateTime? date,
+    DateTime? dateSent,
+    SmsMessageKind? kind,
   }) {
     this._id = id;
     this._threadId = threadId;
@@ -111,51 +110,51 @@ class SmsMessage implements Comparable<SmsMessage> {
       res["read"] = _read;
     }
     if (_date != null) {
-      res["date"] = _date.millisecondsSinceEpoch;
+      res["date"] = _date!.millisecondsSinceEpoch;
     }
     if (_dateSent != null) {
-      res["dateSent"] = _dateSent.millisecondsSinceEpoch;
+      res["dateSent"] = _dateSent!.millisecondsSinceEpoch;
     }
     return res;
   }
 
   /// Get message id
-  int get id => this._id;
+  int? get id => this._id;
 
   /// Get thread id
-  int get threadId => this._threadId;
+  int? get threadId => this._threadId;
 
   /// Get sender, alias phone number
-  String get sender => this._address;
+  String? get sender => this._address;
 
   /// Get address, alias phone number
-  String get address => this._address;
+  String? get address => this._address;
 
   /// Get message body
-  String get body => this._body;
+  String? get body => this._body;
 
   /// Check if message is read
-  bool get isRead => this._read;
+  bool get isRead => this._read ?? false;
 
   /// Get date
-  DateTime get date => this._date;
+  DateTime? get date => this._date;
 
   /// Get date sent
-  DateTime get dateSent => this._dateSent;
+  DateTime? get dateSent => this._dateSent;
 
   /// Get message kind
-  SmsMessageKind get kind => this._kind;
+  SmsMessageKind? get kind => this._kind;
 
   Stream<SmsMessageState> get onStateChanged => _stateStreamController.stream;
 
   /// Set message kind
-  set kind(SmsMessageKind kind) => this._kind = kind;
+  set kind(SmsMessageKind? kind) => this._kind = kind;
 
   /// Set message date
-  set date(DateTime date) => this._date = date;
+  set date(DateTime? date) => this._date = date;
 
   /// Get message state
-  get state => this._state;
+  SmsMessageState get state => this._state;
 
   set state(SmsMessageState state) {
     if (this._state != state) {
@@ -166,7 +165,7 @@ class SmsMessage implements Comparable<SmsMessage> {
 
   @override
   int compareTo(SmsMessage other) {
-    return other._id - this._id;
+    return (other._id ?? -1) - (this._id ?? -1);
   }
 }
 /*
@@ -264,23 +263,25 @@ class SmsThread {
 /// receiver.onSmsReceived.listen((SmsMessage msg) => ...);
 /// ```
 class SmsReceiver {
-  static SmsReceiver _instance;
+  static SmsReceiver? _instance;
   final EventChannel _channel;
-  Stream<SmsMessage> _onSmsReceived;
+  Stream<SmsMessage>? _onSmsReceived;
 
   factory SmsReceiver() {
     if (_instance == null) {
       final EventChannel eventChannel = const EventChannel(
-          "plugins.babariviere.com/recvSMS", const JSONMethodCodec());
+        "plugins.babariviere.com/recvSMS",
+        const JSONMethodCodec(),
+      );
       _instance = new SmsReceiver._private(eventChannel);
     }
-    return _instance;
+    return _instance ?? SmsReceiver();
   }
 
   SmsReceiver._private(this._channel);
 
   /// Create a stream that collect received SMS
-  Stream<SmsMessage> get onSmsReceived {
+  Stream<SmsMessage>? get onSmsReceived {
     if (_onSmsReceived == null) {
       print("Creating sms receiver");
       _onSmsReceived = _channel.receiveBroadcastStream().map((dynamic event) {

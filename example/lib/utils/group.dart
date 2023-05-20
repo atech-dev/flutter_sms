@@ -14,7 +14,7 @@ class MessageGroupService {
     final groups = new _GroupCollection();
     messages.forEach((message) {
       String groupLabel =
-          MaterialLocalizations.of(context).formatFullDate(message.date);
+          MaterialLocalizations.of(context).formatFullDate(message.date ?? DateTime.now());
       if (groups.contains(groupLabel)) {
         groups.get(groupLabel).addMessage(message);
       } else {

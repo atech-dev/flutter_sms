@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:sms/contact.dart';
 
@@ -10,14 +9,14 @@ class Avatar extends StatelessWidget {
         alternativeText = alternativeText,
         super(key: new ObjectKey(photo));
 
-  final Photo photo;
+  final Photo? photo;
   final String alternativeText;
 
   @override
   Widget build(BuildContext context) {
     if (photo != null) {
       return new CircleAvatar(
-        backgroundImage: new MemoryImage(photo.bytes),
+        backgroundImage: new MemoryImage(photo!.bytes!),
       );
     }
 
