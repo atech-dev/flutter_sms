@@ -1,10 +1,12 @@
 package com.babariviere.sms;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.os.Build;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.babariviere.sms.permisions.Permissions;
 import com.babariviere.sms.telephony.TelephonyManager;
@@ -13,51 +15,109 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.PluginRegistry;
 
-class SimCardsHandler implements PluginRegistry.RequestPermissionsResultListener {
-    private final String[] permissionsList = new String[]{Manifest.permission.READ_PHONE_STATE};
-    private PluginRegistry.Registrar registrar;
-    private MethodChannel.Result result;
+public class SimCardsProvider
+    implements FlutterPlugin,
+               ActivityAware,
+               MethodChannel.MethodCallHandler,
+               PluginRegistry.RequestPermissionsResultListener {
 
-    SimCardsHandler(PluginRegistry.Registrar registrar, MethodChannel.Result result) {
-        this.registrar = registrar;
-        this.result = result;
+    private static final int READ_PHONE_STATE_REQ = Permissions.READ_PHONE_STATE;
+    private final String[] permissionsList = { Manifest.permission.READ_PHONE_STATE };
+
+    private MethodChannel channel;
+    private Context context;
+    private ActivityPluginBinding activityBinding;
+    private MethodChannel.Result pendingResult;
+
+    // Regista o canal ao anexar o engine
+    @Override
+    public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
+        context = binding.getApplicationContext();
+        channel = new MethodChannel(binding.getBinaryMessenger(), "sms");
+        channel.setMethodCallHandler(this);
+    }
+
+    // Limpa ao desanexar o engine
+    @Override
+    public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+        channel.setMethodCallHandler(null);
+        channel = null;
+        context = null;
+    }
+
+    // ActivityAware: obtém a Activity e adiciona listener de permissões
+    @Override
+    public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+        activityBinding = binding;
+        binding.addRequestPermissionsResultListener(this);
     }
 
     @Override
-    public boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode != Permissions.READ_PHONE_STATE) {
+    public void onDetachedFromActivityForConfigChanges() {
+        activityBinding.removeRequestPermissionsResultListener(this);
+        activityBinding = null;
+    }
+
+    @Override
+    public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+        activityBinding = binding;
+        binding.addRequestPermissionsResultListener(this);
+    }
+
+    @Override
+    public void onDetachedFromActivity() {
+        activityBinding.removeRequestPermissionsResultListener(this);
+        activityBinding = null;
+    }
+
+    // Trata a chamada Dart "getSimCards"
+    @Override
+    public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+        if (!"getSimCards".equals(call.method)) {
+            result.notImplemented();
+            return;
+        }
+        pendingResult = result;
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE)
+            != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                activityBinding.getActivity(),
+                permissionsList,
+                READ_PHONE_STATE_REQ
+            );
+        } else {
+            getSimCards();
+        }
+    }
+
+    // Callback de permissão
+    @Override
+    public boolean onRequestPermissionsResult(int requestCode, String[] perms, int[] grantResults) {
+        if (requestCode != READ_PHONE_STATE_REQ) {
             return false;
         }
-        boolean isOk = true;
         for (int res : grantResults) {
             if (res != PackageManager.PERMISSION_GRANTED) {
-                isOk = false;
-                break;
+                pendingResult.error("#01", "permission denied", null);
+                return false;
             }
         }
-        if (isOk) {
-            getSimCards();
-            return true;
-        }
-        result.error("#01", "permission denied", null);
-        return false;
+        getSimCards();
+        return true;
     }
 
-    void handle(Permissions permissions) {
-        if (permissions.checkAndRequestPermission(permissionsList, Permissions.READ_PHONE_STATE)) {
-            getSimCards();
-        }
-    }
-
+    // Lógica original de obtenção dos SIM cards
     private void getSimCards() {
         JSONArray simCards = new JSONArray();
-
         try {
-            TelephonyManager telephonyManager = new TelephonyManager(registrar.context());
+            TelephonyManager telephonyManager = new TelephonyManager(context);
             int phoneCount = telephonyManager.getSimCount();
             for (int i = 0; i < phoneCount; i++) {
                 JSONObject simCard = new JSONObject();
@@ -68,35 +128,9 @@ class SimCardsHandler implements PluginRegistry.RequestPermissionsResultListener
             }
         } catch (JSONException e) {
             e.printStackTrace();
-            result.error("2", e.getMessage(), null);
+            pendingResult.error("2", e.getMessage(), null);
             return;
         }
-
-        result.success(simCards);
-    }
-}
-
-class SimCardsProvider implements MethodChannel.MethodCallHandler {
-    private final Permissions permissions;
-    private final PluginRegistry.Registrar registrar;
-
-    SimCardsProvider(PluginRegistry.Registrar registrar) {
-        this.registrar = registrar;
-        permissions = new Permissions(registrar.activity());
-    }
-
-    @Override
-    public void onMethodCall(MethodCall call, MethodChannel.Result result) {
-        if (!call.method.equals("getSimCards")) {
-            result.notImplemented();
-        } else {
-            getSimCards(result);
-        }
-    }
-
-    private void getSimCards(MethodChannel.Result result) {
-        SimCardsHandler handler = new SimCardsHandler(registrar, result);
-        this.registrar.addRequestPermissionsResultListener(handler);
-        handler.handle(permissions);
+        pendingResult.success(simCards);
     }
 }

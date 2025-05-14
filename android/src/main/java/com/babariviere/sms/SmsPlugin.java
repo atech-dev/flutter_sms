@@ -1,131 +1,91 @@
 package com.babariviere.sms;
 
-import androidx.annotation.NonNull;
-
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+
 import com.babariviere.sms.permisions.Permissions;
-import com.babariviere.sms.status.SmsStateHandler;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
-
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
-
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.JSONMethodCodec;
-import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
-import io.flutter.plugin.common.StandardMethodCodec;
 
 /**
  * SmsPlugin
  */
 public class SmsPlugin implements FlutterPlugin, ActivityAware {
     private static final String CHANNEL_RECV = "plugins.babariviere.com/recvSMS";
-    // private static final String CHANNEL_SMS_STATUS = "plugins.babariviere.com/statusSMS";
-    // private static final String CHANNEL_SEND = "plugins.babariviere.com/sendSMS";
-    // private static final String CHANNEL_QUER = "plugins.babariviere.com/querySMS";
-    // private static final String CHANNEL_QUER_CONT = "plugins.babariviere.com/queryContact";
-    // private static final String CHANNEL_QUER_CONT_PHOTO = "plugins.babariviere.com/queryContactPhoto";
-    // private static final String CHANNEL_USER_PROFILE = "plugins.babariviere.com/userProfile";
-    // private static final String CHANNEL_SIM_CARDS = "plugins.babariviere.com/simCards";
 
-    // private MethodChannel channel;
     private EventChannel receiveSmsChannel;
     private Context context;
+    private ActivityPluginBinding activityBinding;
 
+    // 1) Regista o canal quando o engine é anexado
     @Override
-    public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
-        // channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "hello");
-        // channel.setMethodCallHandler(this);
-
-        this.context = flutterPluginBinding.getApplicationContext();
-        receiveSmsChannel = new EventChannel(flutterPluginBinding.getBinaryMessenger(),
-                CHANNEL_RECV, JSONMethodCodec.INSTANCE);
+    public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
+        this.context = binding.getApplicationContext();
+        receiveSmsChannel = new EventChannel(
+            binding.getBinaryMessenger(),
+            CHANNEL_RECV,
+            JSONMethodCodec.INSTANCE
+        );
     }
 
+    // 2) Limpa o canal quando o engine é desanexado
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-        // BackgroundFetchModule.getInstance().onDetachedFromEngine();
-        receiveSmsChannel = null;
+        if (receiveSmsChannel != null) {
+            receiveSmsChannel.setStreamHandler(null);
+            receiveSmsChannel = null;
+        }
+        context = null;
     }
 
+    // 3) Quando a Activity é anexada, regista permissões e o receiver
     @Override
-    public void onAttachedToActivity(ActivityPluginBinding activityPluginBinding) {
-        // BackgroundFetchModule.getInstance().setActivity(activityPluginBinding.getActivity());
-        activityPluginBinding.addRequestPermissionsResultListener(Permissions.getRequestsResultsListener());
+    public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+        this.activityBinding = binding;
+        binding.addRequestPermissionsResultListener(Permissions.getRequestsResultsListener());
 
         // SMS receiver
-        final SmsReceiver receiver = new SmsReceiver(context, activityPluginBinding.getActivity(), null, activityPluginBinding);
+        SmsReceiver receiver = new SmsReceiver(
+            context,
+            binding
+        );
         receiveSmsChannel.setStreamHandler(receiver);
     }
 
+    // 4) Config change: a Activity foi destruída, mas o plugin permanece vivo
     @Override
     public void onDetachedFromActivityForConfigChanges() {
-        // TODO: the Activity your plugin was attached to was
-        // destroyed to change configuration.
-        // This call will be followed by onReattachedToActivityForConfigChanges().
+        // Não remove o StreamHandler aqui, pois será reatached a seguir
     }
 
+    // 5) Config change: nova Activity anexada
     @Override
-    public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding activityPluginBinding) {
-        // TODO: your plugin is now attached to a new Activity
-        // after a configuration change.
+    public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+        this.activityBinding = binding;
+        binding.addRequestPermissionsResultListener(Permissions.getRequestsResultsListener());
+
+        // Re-regista o receiver na nova Activity
+        SmsReceiver receiver = new SmsReceiver(
+            context,
+            binding
+        );
+        receiveSmsChannel.setStreamHandler(receiver);
     }
 
+    // 6) Quando a Activity final é desanexada, limpa o receiver
     @Override
     public void onDetachedFromActivity() {
-        // BackgroundFetchModule.getInstance().setActivity(null);
-        receiveSmsChannel.setStreamHandler(null);
+        if (receiveSmsChannel != null) {
+            receiveSmsChannel.setStreamHandler(null);
+        }
+        activityBinding = null;
     }
 
-    /**
-     * Plugin registration.
-     */
-    public static void registerWith(Registrar registrar) {
-
-        registrar.addRequestPermissionsResultListener(Permissions.getRequestsResultsListener());
-
-        // SMS receiver
-        final SmsReceiver receiver = new SmsReceiver(registrar.context(), registrar.activity(), registrar, null);
-        final EventChannel receiveSmsChannel = new EventChannel(registrar.messenger(),
-                CHANNEL_RECV, JSONMethodCodec.INSTANCE);
-        receiveSmsChannel.setStreamHandler(receiver);
-
-        /*// SMS status receiver
-        new EventChannel(registrar.messenger(), CHANNEL_SMS_STATUS, JSONMethodCodec.INSTANCE)
-                .setStreamHandler(new SmsStateHandler(registrar));
-
-        /// SMS sender
-        final SmsSender sender = new SmsSender(registrar);
-        final MethodChannel sendSmsChannel = new MethodChannel(registrar.messenger(),
-                CHANNEL_SEND, JSONMethodCodec.INSTANCE);
-        sendSmsChannel.setMethodCallHandler(sender);
-
-        /// SMS query
-        final SmsQuery query = new SmsQuery(registrar);
-        final MethodChannel querySmsChannel = new MethodChannel(registrar.messenger(), CHANNEL_QUER, JSONMethodCodec.INSTANCE);
-        querySmsChannel.setMethodCallHandler(query);
-
-        /// Contact query
-        final ContactQuery contactQuery = new ContactQuery(registrar);
-        final MethodChannel queryContactChannel = new MethodChannel(registrar.messenger(), CHANNEL_QUER_CONT, JSONMethodCodec.INSTANCE);
-        queryContactChannel.setMethodCallHandler(contactQuery);
-
-        /// Contact Photo query
-        final ContactPhotoQuery contactPhotoQuery = new ContactPhotoQuery(registrar);
-        final MethodChannel queryContactPhotoChannel = new MethodChannel(registrar.messenger(), CHANNEL_QUER_CONT_PHOTO, StandardMethodCodec.INSTANCE);
-        queryContactPhotoChannel.setMethodCallHandler(contactPhotoQuery);
-
-        /// User Profile
-        final UserProfileProvider userProfileProvider = new UserProfileProvider(registrar);
-        final MethodChannel userProfileProviderChannel = new MethodChannel(registrar.messenger(), CHANNEL_USER_PROFILE, JSONMethodCodec.INSTANCE);
-        userProfileProviderChannel.setMethodCallHandler(userProfileProvider);
-
-        //Sim Cards Provider
-        new MethodChannel(registrar.messenger(), CHANNEL_SIM_CARDS, JSONMethodCodec.INSTANCE)
-                .setMethodCallHandler(new SimCardsProvider(registrar));*/
-    }
+    // Note que removemos completamente o método estático registerWith,
+    // pois a integração agora é feita via onAttachedToEngine / ActivityAware.
 }
